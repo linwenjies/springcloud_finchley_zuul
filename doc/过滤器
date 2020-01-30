@@ -1,0 +1,9 @@
+zuul的过滤器有4种类型：
+	pre：在请求被路由之前调用，适合权限验证
+	route：在路由请求时被调用，适用于灰度发布
+	post：在route和error之后被调用，这种过滤器将请求路由到达具体的服务之后执行，适用于需要添加响应头，记录相应日志等应用场景。
+	error：处理请求发生错误时被调用
+	
+禁用过滤器的方式：
+	在shouldFilter中直接返回false
+	zuul.filterName.filterType.disable=true #filterName是在spring容器中国注册的过滤器名，filterType是过滤器类型

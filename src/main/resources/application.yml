@@ -1,0 +1,64 @@
+server:
+  port: 8012
+
+spring:
+  application:
+    name: eureka-zuul
+
+eureka:
+  client:
+    serviceUrl: #注册中心地址
+      defaultZone: http://lwj:lwj@122.51.153.21:8001/eureka/,http://lwj:lwj@122.51.153.21:8002/eureka/,http://lwj:lwj@122.51.153.21:8003/eureka/
+    healthcheck:
+      enabled: true
+  instance:
+    lease-renewal-interval-in-seconds: 5 #client发送心跳给server的频率，默认30秒
+    lease-expiration-duration-in-seconds: 5 #server至上一次收到client的心跳之后，等待下一次心跳的超时时间，在这个时间内没有收到下一次心跳则移除这个实例，默认90秒
+    preferIpAddress: true
+    instance-id: ${spring.application.name}:${spring.cloud.client.ip-address}:${server.port}
+
+#下面的配置在feign的调用中也是有效的    
+ribbon:
+  ConnectTimeout: 1000
+  ReadTimeout: 450
+  eager-load:
+    enabled: true #开启饥饿加载机制
+    clients: eureka-client #指定饥饿调用的服务名，多个的话用逗号分隔开
+  MaxAutoRetries: 0 #当前机器不重试
+  MaxAutoRetriesNextServer: 1
+  OkToRetryOnAllOperations: true
+
+#开启hystrix对feign的支持
+feign:
+  hystrix:
+    enabled: true
+
+hystrix:
+  command:
+    default:
+      execution:
+        isolation:
+          thread:
+            timeoutInMilliseconds: 1000 #这里设置的超时时间应该是要大于（ribbon的超时时间*机器数*重试次数，但是具体生产上面定义还是要根据实际的来），否则有可能在重试的过程中就直接断路了
+
+zuul:
+  #prefix: /test #路由前缀配置
+  routes:
+    eureka-client: #路由配置，服务名访问简化
+      path: /example/**
+
+#下面这段话不配置的话会导致访问不到断路器的信息收集页面
+management:
+  endpoints:
+    web:
+      exposure:
+        include: filters,routes
+
+#feign调用日志输出
+logging:
+  level:
+    com:
+      lwj:
+        demo:
+          feign:
+            FeignService: DEBUG
